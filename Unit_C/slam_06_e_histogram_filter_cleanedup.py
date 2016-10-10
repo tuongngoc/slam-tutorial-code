@@ -18,7 +18,7 @@ def histogram_plot(prediction, measurement, correction):
     plot(prediction.plotlists(*arena)[0], prediction.plotlists(*arena)[1],
          color='#C0C0FF', linestyle='steps', linewidth=5)
     plot(measurement.plotlists(*arena)[0], measurement.plotlists(*arena)[1],
-         color='#C0FFC0', linestyle='steps', linewidth=5)    
+         color='#C0FFC0', linestyle='steps', linewidth=5)
     plot(correction.plotlists(*arena)[0], correction.plotlists(*arena)[1],
          color='#FFC0C0', linestyle='steps', linewidth=5)
 
@@ -40,7 +40,7 @@ def histogram_filter_step(belief, control, measurement):
 #
 if __name__ == '__main__':
     arena = (0,200)
-    Dist = Distribution.triangle  # Distribution.triangle or Distribution.gaussian.
+    Dist = Distribution.gaussian  # Distribution.triangle or Distribution.gaussian.
 
     # Start position. Well known, so the distribution is narrow.
     position = Dist(10, 1)

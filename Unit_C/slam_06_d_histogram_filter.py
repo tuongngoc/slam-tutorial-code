@@ -12,9 +12,25 @@ def move(distribution, delta):
     return Distribution(distribution.offset + delta, distribution.values)
 
 
+def convolve(a, b):
+    """Convolve distribution a and b and return the resulting new distribution."""
 
-# --->>> Copy your convolve(a, b) and multiply(a, b) functions here.
+    a = move(a, b.offset)  # move distribution
+    posterior_pr = []
+    for i, a_val in enumerate(a.values):
+        new_values = [b_val*a_val for b_val in b.values]
+        d = Distribution(a.offset+i, new_values)
+        posterior_pr.append(d)
 
+    return Distribution.sum(posterior_pr)
+
+
+def multiply(a, b):
+    """Multiply two distributions and return the resulting distribution."""
+    new_values = [a.value(b.offset+i)*b_val for i, b_val in enumerate(b.values)]
+    d = Distribution(b.offset, new_values)
+    d.normalize()
+    return d
 
 
 if __name__ == '__main__':
@@ -47,7 +63,7 @@ if __name__ == '__main__':
              color='b', linestyle='steps')
 
         # Measure, by multiplication. Also termed "correction".
-        measurement = Distribution.triangle(measurements[i], 10)
+        measurement = Distribution.triangle(measurements[i], 50)
         position = multiply(position, measurement)
         plot(position.plotlists(*arena)[0], position.plotlists(*arena)[1],
              color='r', linestyle='steps')

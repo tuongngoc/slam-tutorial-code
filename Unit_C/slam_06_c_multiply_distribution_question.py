@@ -1,15 +1,16 @@
 # Multiply a distribution by another distribution.
 # 06_c_multiply_distribution
 # Claus Brenner, 26 NOV 2012
-from pylab import plot, show
+from pylab import plot, show, grid
 from distribution import *
 
 def multiply(a, b):
     """Multiply two distributions and return the resulting distribution."""
 
-    # --->>> Put your code here.
-    
-    return a  # Modify this to return your result.
+    new_values = [a.value(b.offset+i)*b_val for i, b_val in enumerate(b.values)]
+    d = Distribution(b.offset, new_values)
+    d.normalize()
+    return d
 
 
 if __name__ == '__main__':
@@ -24,7 +25,7 @@ if __name__ == '__main__':
 
     # Here is our measurement. Plotted in green.
     # That is what we read from the instrument.
-    measured_value = 410
+    measured_value = 400
     measurement_error = 200
     measurement = Distribution.triangle(measured_value, measurement_error)
     plot(measurement.plotlists(*arena)[0], measurement.plotlists(*arena)[1],
@@ -35,5 +36,5 @@ if __name__ == '__main__':
     plot(position_after_measurement.plotlists(*arena)[0],
          position_after_measurement.plotlists(*arena)[1],
          color='r', linestyle='steps')
-
+    grid(True)
     show()

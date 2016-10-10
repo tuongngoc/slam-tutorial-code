@@ -23,7 +23,7 @@ def histogram_plot(prediction, measurement, correction):
     plot(prediction.plotlists(*arena)[0], prediction.plotlists(*arena)[1],
          color='#C0C0FF', linestyle='steps', linewidth=5)
     plot(measurement.plotlists(*arena)[0], measurement.plotlists(*arena)[1],
-         color='#C0FFC0', linestyle='steps', linewidth=5)    
+         color='#C0FFC0', linestyle='steps', linewidth=5)
     plot(correction.plotlists(*arena)[0], correction.plotlists(*arena)[1],
          color='#FFC0C0', linestyle='steps', linewidth=5)
 
@@ -54,12 +54,14 @@ def kalman_filter_step(belief, control, measurement):
     """Bayes filter step implementation: Kalman filter."""
 
     # --->>> Put your code here.
-    
+
     # Prediction.
-    prediction = Density(belief.mu + 10.0, belief.sigma2 + 100.0)  # Replace
+    prediction = Density(belief.mu + control.mu, belief.sigma2 + control.sigma2)
 
     # Correction.
-    correction = prediction  # Replace
+    K = prediction.sigma2/(prediction.sigma2 + measurement.sigma2)
+    correction = Density(prediction.mu + K*(measurement.mu - prediction.mu),
+                         (1 - K)*prediction.sigma2)
 
     return (prediction, correction)
 

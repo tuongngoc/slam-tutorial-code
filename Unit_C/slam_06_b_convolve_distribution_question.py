@@ -12,9 +12,14 @@ def move(distribution, delta):
 def convolve(a, b):
     """Convolve distribution a and b and return the resulting new distribution."""
 
-    # --->>> Put your code here.
-    
-    return a  # Replace this by your own result.
+    a = move(a, b.offset)  # move distribution
+    posterior_pr = []
+    for i, a_val in enumerate(a.values):
+        new_values = [b_val*a_val for b_val in b.values]
+        d = Distribution(a.offset+i, new_values)
+        posterior_pr.append(d)
+
+    return Distribution.sum(posterior_pr)
 
 
 if __name__ == '__main__':
