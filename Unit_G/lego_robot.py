@@ -143,7 +143,7 @@ class LegoLogfile(object):
                     self.landmarks = []
                     first_landmarks = False
                 if sp[1] == 'C':
-                    self.landmarks.append( tuple(['C'] + map(float, sp[2:])) )
+                    self.landmarks.append( tuple(['C'] + list(map(float, sp[2:]))) )
                     
             # D is detected landmarks (in each scan).
             # File format: D <type> info...
@@ -156,8 +156,8 @@ class LegoLogfile(object):
                     if first_detected_cylinders:
                         self.detected_cylinders = []
                         first_detected_cylinders = False
-                    cyl = map(float, sp[2:])
-                    self.detected_cylinders.append([(cyl[2*i], cyl[2*i+1]) for i in range(len(cyl)/2)])
+                    cyl = list(map(float, sp[2:]))
+                    self.detected_cylinders.append([(cyl[2*i], cyl[2*i+1]) for i in range(len(cyl)//2)])
 
             # W is information to be plotted in the world (in each scan).
             # File format: W <type> info...
@@ -176,8 +176,8 @@ class LegoLogfile(object):
                     if first_world_cylinders:
                         self.world_cylinders = []
                         first_world_cylinders = False
-                    cyl = map(float, sp[2:])
-                    self.world_cylinders.append([(cyl[2*i], cyl[2*i+1]) for i in range(len(cyl)/2)])
+                    cyl = list(map(float, sp[2:]))
+                    self.world_cylinders.append([(cyl[2*i], cyl[2*i+1]) for i in range(len(cyl)//2)])
                 elif sp[1] == 'E':
                     if first_world_ellipses:
                         self.world_ellipses = []

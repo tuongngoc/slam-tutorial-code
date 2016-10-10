@@ -56,7 +56,7 @@ class LegoLogfile(object):
             if sp[0] == 'P':
                 if first_reference_positions:
                     self.reference_positions = []
-                    first_reference_positions = False 
+                    first_reference_positions = False
                 self.reference_positions.append( (int(sp[2]), int(sp[3])) )
 
             # S is the scan data.
@@ -125,7 +125,7 @@ class LegoLogfile(object):
                     self.filtered_stddev = []
                     first_filtered_stddev = False
                 self.filtered_stddev.append( tuple( map(float, sp[1:])) )
-                
+
             # L is landmark. This is actually background information, independent
             # of time.
             # File format: L <type> info...
@@ -137,8 +137,8 @@ class LegoLogfile(object):
                     self.landmarks = []
                     first_landmarks = False
                 if sp[1] == 'C':
-                    self.landmarks.append( tuple(['C'] + map(float, sp[2:])) )
-                    
+                    self.landmarks.append( tuple(['C'] + list(map(float, sp[2:]))) )
+
             # D is detected landmarks (in each scan).
             # File format: D <type> info...
             # Supported types:
@@ -150,8 +150,8 @@ class LegoLogfile(object):
                     if first_detected_cylinders:
                         self.detected_cylinders = []
                         first_detected_cylinders = False
-                    cyl = map(float, sp[2:])
-                    self.detected_cylinders.append([(cyl[2*i], cyl[2*i+1]) for i in range(len(cyl)/2)])
+                    cyl = list(map(float, sp[2:]))
+                    self.detected_cylinders.append([(cyl[2*i], cyl[2*i+1]) for i in range(len(cyl)//2)])
 
             # W is information to be plotted in the world (in each scan).
             # File format: W <type> info...
@@ -164,8 +164,8 @@ class LegoLogfile(object):
                     if first_world_cylinders:
                         self.world_cylinders = []
                         first_world_cylinders = False
-                    cyl = map(float, sp[2:])
-                    self.world_cylinders.append([(cyl[2*i], cyl[2*i+1]) for i in range(len(cyl)/2)])
+                    cyl = list(map(float, sp[2:]))
+                    self.world_cylinders.append([(cyl[2*i], cyl[2*i+1]) for i in range(len(cyl)//2)])
 
         f.close()
 
@@ -189,7 +189,7 @@ class LegoLogfile(object):
         dx = cos(pose[2])
         dy = sin(pose[2])
         x, y = point
-        return (x * dx - y * dy + pose[0], x * dy + y * dx + pose[1])        
+        return (x * dx - y * dy + pose[0], x * dy + y * dx + pose[1])
 
     def info(self, i):
         """Prints reference pos, number of scan points, and motor ticks."""
@@ -208,7 +208,7 @@ class LegoLogfile(object):
                     s += " %d" % idx
             else:
                 s += " | (no pole indices)"
-                    
+
         if i < len(self.motor_ticks):
             s += " | motor: %d %d" % self.motor_ticks[i]
 

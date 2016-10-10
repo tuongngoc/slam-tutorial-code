@@ -215,7 +215,7 @@ class Points(DrawableObject):
 
     def draw(self, at_step):
         if self.cursor_objects:
-            map(self.canvas.delete, self.cursor_objects)
+            for obj in self.cursor_objects: self.canvas.delete(obj)
             self.cursor_objects = []
         if at_step < len(self.points):
             for i in range(len(self.points[at_step])):
@@ -249,7 +249,7 @@ class Particles(DrawableObject):
 
     def draw(self, at_step):
         if self.cursor_objects:
-            map(self.canvas.delete, self.cursor_objects)
+            for obj in self.cursor_objects: self.canvas.delete(obj)
             self.cursor_objects = []
         if at_step < len(self.particles):
             for c in self.particles[at_step]:
