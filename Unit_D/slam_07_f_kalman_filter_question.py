@@ -24,7 +24,8 @@ class ExtendedKalmanFilter:
         self.control_turn_factor = control_turn_factor
         self.measurement_distance_stddev = measurement_distance_stddev
         self.measurement_angle_stddev = measurement_angle_stddev
-
+        self.Q = diag([measurement_distance_stddev**2,
+                       measurement_angle_stddev**2])
     @staticmethod
     def g(state, control, w):
         x, y, theta = state
@@ -44,15 +45,65 @@ class ExtendedKalmanFilter:
 
     @staticmethod
     def dg_dstate(state, control, w):
+        theta = state[2]
+        l, r = control
+        if r != l:
 
-        # --->>> Put your method from 07_d_kalman_predict here.
-        pass # Remove this.
+            # This is for the case r != l.
+            # g has 3 components and the state has 3 components, so the
+            # derivative of g with respect to all state variables is a
+            # 3x3 matrix.
+            alpha = (r - l) / w
+            rad = l/alpha
+            Rw2 = rad + w/2
+            m = array([ [1, 0, Rw2*(cos(theta + alpha) - cos(theta))],
+                        [0, 1, Rw2*(sin(theta + alpha) - sin(theta))],
+                        [0, 0, 1]
+                ])
+
+        else:
+            # This is for the special case r == l.
+            m = array([ [1, 0, -l*sin(theta)],
+                        [0, 1,  l*cos(theta)],
+                        [0, 0, 1]
+                ])
+        return m
 
     @staticmethod
     def dg_dcontrol(state, control, w):
+        theta = state[2]
+        l, r = tuple(control)
+        if r != l:
+            alpha = (r - l) / w
+            rad = l/alpha
+            # This is for the case l != r.
+            # Note g has 3 components and control has 2, so the result
+            # will be a 3x2 (rows x columns) matrix.
+            dg1dl = (w*r)*( sin(theta+alpha) - sin(theta))/(r-l)**2 \
+                   -(r+l)*cos(theta+alpha)/(2*(r-l))
+            dg2dl = (w*r)*(-cos(theta+alpha) + cos(theta))/(r-l)**2 \
+                   -(r+l)*sin(theta+alpha)/(2*(r-l))
 
-        # --->>> Put your method from 07_d_kalman_predict here.
-        pass # Remove this.
+
+            dg1dr = (-w*l)*( sin(theta+alpha) - sin(theta))/(r-l)**2 \
+                   +(r+l)*cos(theta+alpha)/(2*(r-l))
+            dg2dr = (-w*l)*(-cos(theta+alpha) + cos(theta))/(r-l)**2 \
+                   +(r+l)*sin(theta+alpha)/(2*(r-l))
+        else:
+            # This is for the special case l == r.
+            dg1dl = 0.5*(cos(theta) + (l/w)*sin(theta))
+            dg2dl = 0.5*(sin(theta) - (l/w)*cos(theta))
+            dg1dr = 0.5*(-(l/w)*sin(theta) + cos(theta))
+            dg2dr = 0.5*( (l/w)*cos(theta) + sin(theta))
+
+        dg3dl = -1/w
+        dg3dr =  1/w
+
+        m = array([[dg1dl, dg1dr],
+                   [dg2dl, dg2dr],
+                   [dg3dl, dg3dr]])
+
+        return m
 
     @staticmethod
     def get_error_ellipse(covariance):
@@ -63,12 +114,27 @@ class ExtendedKalmanFilter:
            standard deviation along the other (orthogonal) axis."""
         eigenvals, eigenvects = linalg.eig(covariance[0:2,0:2])
         angle = atan2(eigenvects[1,0], eigenvects[0,0])
-        return (angle, sqrt(eigenvals[0]), sqrt(eigenvals[1]))        
+        return (angle, sqrt(eigenvals[0]), sqrt(eigenvals[1]))
 
     def predict(self, control):
+        """The prediction step of the Kalman filter."""
+        # covariance' = G * covariance * GT + R
+        # where R = V * (covariance in control space) * VT.
+        # Covariance in control space depends on move distance.
+        l, r = control
 
-        # --->>> Put your method from 07_d_kalman_predict here.
-        pass # Remove this.
+        sigL2 = (self.control_motion_factor*l)**2 \
+                + (self.control_turn_factor*(r-l))**2
+        sigR2 = (self.control_motion_factor*r)**2 \
+                + (self.control_turn_factor*(r-l))**2
+
+        control_cov = diag([sigL2, sigR2])
+        V = self.dg_dcontrol(self.state, control, self.robot_width)
+        G = self.dg_dstate(self.state, control, self.robot_width)
+        self.covariance = G @ self.covariance @ G.T + V @ control_cov @ V.T
+
+        # state' = g(state, control)
+        self.state = self.g(self.state, control, self.robot_width)
 
     @staticmethod
     def h(state, landmark, scanner_displacement):
@@ -83,38 +149,46 @@ class ExtendedKalmanFilter:
 
     @staticmethod
     def dh_dstate(state, landmark, scanner_displacement):
+        x, y, theta = state
+        xm, ym = landmark
+        d = scanner_displacement
 
-        # --->>> Put your method from 07_e_measurement derivative here.
-        pass # Remove this.
+        xl = x + d*cos(theta)
+        yl = y + d*sin(theta)
+        q = (xm - xl)**2 + (ym - yl)**2
+
+        dx = xm - xl
+        dy = ym - yl
+
+        # Note that:
+        # x y theta is state[0] state[1] state[2]
+        # x_m y_m is landmark[0] landmark[1]
+        # The Jacobian of h is a 2x3 matrix.
+        drdx = -dx/sqrt(q)
+        drdy = -dy/sqrt(q)
+        drdtheta = d*(dx*sin(theta) - dy*cos(theta))/sqrt(q)
+
+        dadx = dy/q
+        dady = -dx/q
+        dadtheta = - d/q * (dx*cos(theta) + dy*sin(theta)) - 1
+        return array([[drdx, drdy, drdtheta],
+                      [dadx, dady, dadtheta]])
 
     def correct(self, measurement, landmark):
         """The correction step of the Kalman filter."""
+        Z = array(measurement)
+        Z[1] = atan2(sin(Z[1]), cos(Z[1]))
 
-        # --->>> Put your new code here.
-        #
-        # You will have to compute:
-        # H, using dh_dstate(...).
-        # Q, a diagonal matrix, from self.measurement_distance_stddev and
-        #  self.measurement_angle_stddev (remember: Q contains variances).
-        # K, from self.covariance, H, and Q.
-        #  Use linalg.inv(...) to compute the inverse of a matrix.
-        # The innovation: it is easy to make an error here, because the
-        #  predicted measurement and the actual measurement of theta may have
-        #  an offset of +/- 2 pi. So here is a suggestion:
-        #   innovation = array(measurement) -\
-        #                self.h(self.state, landmark, self.scanner_displacement)
-        #   innovation[1] = (innovation[1] + pi) % (2*pi) - pi
-        # Then, you'll have to compute the new self.state.
-        # And finally, compute the new self.covariance. Use eye(3) to get a 3x3
-        #  identity matrix.
-        #
-        # Hints:
-        # dot(A, B) is the 'normal' matrix product (do not use: A*B).
-        # A.T is the transposed of a matrix A (A itself is not modified).
-        # linalg.inv(A) returns the inverse of A (A itself is not modified).
-        # eye(3) returns a 3x3 identity matrix.
+        H = self.dh_dstate(self.state, landmark, self.scanner_displacement)
+        P = self.covariance
 
-        pass # Remove this.
+        K = P @ H.T @ linalg.inv(H @ P @ H.T + self.Q)
+        pred_z = self.h(self.state, landmark, self.scanner_displacement)
+        innov = Z - pred_z
+        innov[1] = atan2(sin(innov[1]), cos(innov[1]))
+
+        self.state = self.state + K @ innov
+        self.covariance = (eye(3) - K @ H) @ P
 
 if __name__ == '__main__':
     # Robot constants.
@@ -181,14 +255,14 @@ if __name__ == '__main__':
     f = open("kalman_prediction_and_correction.txt", "w")
     for i in range(len(states)):
         # Output the center of the scanner, not the center of the robot.
-        print("F %f %f %f" % \, file=f)
+        print("F %f %f %f" % \
             tuple(states[i] + [scanner_displacement * cos(states[i][2]),
                                scanner_displacement * sin(states[i][2]),
-                               0.0])
+                               0.0]), file=f)
         # Convert covariance matrix to angle stddev1 stddev2 stddev-heading form
         e = ExtendedKalmanFilter.get_error_ellipse(covariances[i])
         print("E %f %f %f %f" % (e + (sqrt(covariances[i][2,2]),)), file=f)
         # Also, write matched cylinders.
-        write_cylinders(f, "W C", matched_ref_cylinders[i])        
+        write_cylinders(f, "W C", matched_ref_cylinders[i])
 
     f.close()

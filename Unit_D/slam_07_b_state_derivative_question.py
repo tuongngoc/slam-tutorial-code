@@ -32,22 +32,24 @@ class ExtendedKalmanFilter:
         l, r = control
         if r != l:
 
-            # --->>> Put your code here.
             # This is for the case r != l.
             # g has 3 components and the state has 3 components, so the
             # derivative of g with respect to all state variables is a
-            # 3x3 matrix. To construct such a matrix in Python/Numpy,
-            # use: m = array([[1, 2, 3], [4, 5, 6], [7, 8, 9]]),
-            # where 1, 2, 3 are the values of the first row of the matrix.
-            # Don't forget to return this matrix.
-            m = array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])  # Replace this.
+            # 3x3 matrix.
+            alpha = (r - l) / w
+            rad = l/alpha
+            Rw2 = rad + w/2
+            m = array([ [1, 0, Rw2*(cos(theta + alpha) - cos(theta))],
+                        [0, 1, Rw2*(sin(theta + alpha) - sin(theta))],
+                        [0, 0, 1]
+                ])
 
         else:
-
-            # --->>> Put your code here.
             # This is for the special case r == l.
-            m = array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])  # Replace this.
-
+            m = array([ [1, 0, -l*sin(theta)],
+                        [0, 1,  l*cos(theta)],
+                        [0, 0, 1]
+                ])
         return m
 
 
@@ -80,15 +82,15 @@ if __name__ == '__main__':
     dg_dtheta = (ExtendedKalmanFilter.g(state_theta, control, w) -\
                  ExtendedKalmanFilter.g(state, control, w)) / delta
     dg_dstate_numeric = column_stack([dg_dx, dg_dy, dg_dtheta])
-    print dg_dstate_numeric
+    print(dg_dstate_numeric)
 
     # Use the above code to compute the derivative analytically.
     print("Analytic differentiation dx, dy, dtheta:")
     dg_dstate_analytic = ExtendedKalmanFilter.dg_dstate(state, control, w)
-    print dg_dstate_analytic
+    print(dg_dstate_analytic)
 
     # The difference should be close to zero (depending on the setting of
     # delta, above).
     print("Difference:")
-    print dg_dstate_numeric - dg_dstate_analytic
-    print("Seems correct:"), allclose(dg_dstate_numeric, dg_dstate_analytic)
+    print(dg_dstate_numeric - dg_dstate_analytic)
+    print("Seems correct:", allclose(dg_dstate_numeric, dg_dstate_analytic))

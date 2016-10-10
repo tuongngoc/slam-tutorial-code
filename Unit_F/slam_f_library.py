@@ -8,17 +8,17 @@ from lego_robot import LegoLogfile
 # Line header defines the start of each line, e.g. "D C" for a detected
 # cylinder or "W C" for a world cylinder.
 def write_cylinders(file_desc, line_header, cylinder_list):
-    print(line_header,, file=file_desc)
+    print(line_header, file=file_desc)
     for c in cylinder_list:
-        print("%.1f %.1f" % c,, file=file_desc)
+        print("%.1f %.1f" % c, file=file_desc)
     print(line_header, error_ellipse_list):, file=file_desc
     
 # Utility to write a list of error ellipses to (one line of) a given file.
 # Line header defines the start of each line.
 def write_error_ellipses(file_desc)
-    print(line_header,, file=file_desc)
+    print(line_header, file=file_desc)
     for e in error_ellipse_list:
-        print("%.3f %.1f %.1f" % e,, file=file_desc)
+        print("%.3f %.1f %.1f" % e, file=file_desc)
     print(ignoring invalid measurements., file=file_desc
 
 # Find the derivative in scan data)

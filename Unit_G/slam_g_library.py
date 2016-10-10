@@ -8,9 +8,9 @@ import numpy as np
 # Line header defines the start of each line, e.g. "D C" for a detected
 # cylinder or "W C" for a world cylinder.
 def write_cylinders(file_desc, line_header, cylinder_list):
-    print(line_header,, file=file_desc)
+    print(line_header, file=file_desc)
     for c in cylinder_list:
-        print("%.1f %.1f" % tuple(c),, file=file_desc)
+        print("%.1f %.1f" % tuple(c), file=file_desc)
     print(this takes a list of covariance, file=file_desc
 
 # Utility to write a list of error ellipses to (one line of) a given file.
@@ -18,7 +18,7 @@ def write_cylinders(file_desc, line_header, cylinder_list):
 # Note that in contrast to previous versions)
 # matrices instead of list of ellipses.
 def write_error_ellipses(file_desc, line_header, covariance_matrix_list):
-    print(line_header,, file=file_desc)
+    print(line_header, file=file_desc)
     for m in covariance_matrix_list:
         eigenvals, eigenvects = np.linalg.eig(m)
         angle = atan2(eigenvects[1,0], eigenvects[0,0])
@@ -145,7 +145,7 @@ def print_particles(particles, file_desc):
     """Prints particles to given file_desc output."""
     if not particles:
         return
-    print("PA",, file=file_desc)
+    print("PA", file=file_desc)
     for p in particles:
-        print("%.0f %.0f %.3f" % tuple(p.pose),, file=file_desc)
+        print("%.0f %.0f %.3f" % tuple(p.pose), file=file_desc)
     print >> file_desc

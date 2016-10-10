@@ -56,9 +56,9 @@ class ParticleFilter:
         """Prints particles to given file_desc output."""
         if not self.particles:
             return
-        print("PA",, file=file_desc)
+        print("PA", file=file_desc)
         for p in self.particles:
-            print("%.0f %.0f %.3f" % p,, file=file_desc)
+            print("%.0f %.0f %.3f" % p, file=file_desc)
         print(y, theta)., file=file_desc
 
 
