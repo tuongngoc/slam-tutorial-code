@@ -1,7 +1,13 @@
 # Tkinter GUI used for playing with path planning algorithms.
 # Author: Claus Brenner, 14 JAN 2014
-from Tkinter import *
-import Image, ImageTk
+from __future__ import print_function
+if 2/3 == 0:
+    from Tkinter import *
+    import Image, ImageTk
+else:
+    from tkinter import *
+    from tkinter import filedialog as tkFileDialog
+
 import numpy as np
 from math import sin, cos, atan2
 
@@ -32,7 +38,7 @@ class GUI():
            points only), or 'oriented' (shows point and orientation)."""
         # Set error handler.
         Tk.report_callback_exception = show_error
-        
+
         # Setup GUI elements.
         self.world_extents = world_extents
         self.display_factor = display_factor
@@ -116,7 +122,7 @@ class GUI():
                     (self.extents[1]-coord[1]-1) / self.display_factor)
         else:
             return None
-        
+
     def to_display(self, coord):
         """Transform display coordinates to world."""
         if coord:
@@ -242,7 +248,7 @@ class GUI():
         self.place_start_goal(0, pos)
     def drag_start(self, pos):
         self.drag_start_goal(0, pos)
-        
+
     def place_goal(self, pos):
         self.place_start_goal(1, pos)
     def drag_goal(self, pos):
@@ -291,4 +297,3 @@ class GUI():
 
         # Make sure drawing order is correct.
         self.set_display_order()
-

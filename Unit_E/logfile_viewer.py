@@ -1,7 +1,13 @@
 # Python routines to inspect a ikg LEGO robot logfile.
 # Author: Claus Brenner, 28 OCT 2012
-from Tkinter import *
-import tkFileDialog
+from __future__ import print_function
+if 2/3 == 0:
+    from Tkinter import *
+    import tkFileDialog
+else:
+    from tkinter import *
+    from tkinter import filedialog as tkFileDialog
+
 from lego_robot import *
 from math import sin, cos, pi, ceil
 
@@ -191,7 +197,7 @@ class Landmarks(DrawableObject):
     def draw(self, at_step):
         # Landmarks are background only.
         pass
-    
+
 class Points(DrawableObject):
     def __init__(self, points, canvas, color = "red", radius = 5):
         self.points = points
