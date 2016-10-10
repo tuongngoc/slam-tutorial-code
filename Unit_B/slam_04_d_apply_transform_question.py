@@ -68,7 +68,7 @@ def estimate_transform(left_list, right_list, fix_scale = False):
         rr +=  rx*rx + ry*ry
         ll +=  lx*lx + ly*ly
 
-    if rr < 1e-4 and ll < 1e-4:
+    if abs(cs) < 1e-4 and abs(ss) < 1e-4:
         return None
 
     if fix_scale:
