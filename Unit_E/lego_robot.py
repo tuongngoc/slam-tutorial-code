@@ -53,13 +53,15 @@ class LegoLogfile(object):
         f = open(filename)
         for l in f:
             sp = l.split()
+            if len(sp) == 0:
+                continue
             # P is the reference position.
             # File format: P timestamp[in ms] x[in mm] y[in mm]
             # Stored: A list of tuples [(x, y), ...] in reference_positions.
             if sp[0] == 'P':
                 if first_reference_positions:
                     self.reference_positions = []
-                    first_reference_positions = False 
+                    first_reference_positions = False
                 self.reference_positions.append( (int(sp[2]), int(sp[3])) )
 
             # S is the scan data.
@@ -128,7 +130,7 @@ class LegoLogfile(object):
                     self.filtered_stddev = []
                     first_filtered_stddev = False
                 self.filtered_stddev.append( tuple( map(float, sp[1:])) )
-                
+
             # L is landmark. This is actually background information, independent
             # of time.
             # File format: L <type> info...
@@ -141,7 +143,7 @@ class LegoLogfile(object):
                     first_landmarks = False
                 if sp[1] == 'C':
                     self.landmarks.append( tuple(['C'] + list(map(float, sp[2:]))) )
-                    
+
             # D is detected landmarks (in each scan).
             # File format: D <type> info...
             # Supported types:
@@ -175,7 +177,7 @@ class LegoLogfile(object):
             #  PA x0, y0, heading0, x1, y1, heading1, ...
             # Stored: A list of lists of tuples:
             #  [[(x0, y0, heading0), (x1, y1, heading1),...],
-            #   [(x0, y0, heading0), (x1, y1, heading1),...], ...] 
+            #   [(x0, y0, heading0), (x1, y1, heading1),...], ...]
             # where each list contains all particles of one time step.
             elif sp[0] == 'PA':
                 if first_particles:
@@ -211,7 +213,7 @@ class LegoLogfile(object):
         dx = cos(pose[2])
         dy = sin(pose[2])
         x, y = point
-        return (x * dx - y * dy + pose[0], x * dy + y * dx + pose[1])        
+        return (x * dx - y * dy + pose[0], x * dy + y * dx + pose[1])
 
     def info(self, i):
         """Prints reference pos, number of scan points, and motor ticks."""
@@ -230,7 +232,7 @@ class LegoLogfile(object):
                     s += " %d" % idx
             else:
                 s += " | (no pole indices)"
-                    
+
         if i < len(self.motor_ticks):
             s += " | motor: %d %d" % self.motor_ticks[i]
 

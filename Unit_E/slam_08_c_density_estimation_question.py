@@ -9,7 +9,7 @@ from slam_e_library import get_cylinders_from_scan, assign_cylinders
 from math import sin, cos, pi, atan2, sqrt
 import random
 from scipy.stats import norm as normal_dist
-
+import numpy as np
 
 class ParticleFilter:
     def __init__(self, initial_particles,
@@ -47,9 +47,17 @@ class ParticleFilter:
 
     def predict(self, control):
         """The prediction step of the particle filter."""
+        left, right = control
 
-        # --->>> Put the code of a previous solution here.
-        pass  # Remove.
+        alpha_1, alpha_2 = self.control_motion_factor, self.control_turn_factor
+        sigmaL = sqrt((alpha_1*left)**2 + (alpha_2*(right - left))**2)
+        sigmaR = sqrt((alpha_1*right)**2 + (alpha_2*(right - left))**2)
+
+        p_controls = [(random.gauss(left, sigmaL),
+                          random.gauss(right, sigmaR))
+                          for p in self.particles]
+        self.particles = [self.g(p, u, self.robot_width)
+            for p, u in zip(self.particles, p_controls)]
 
     # Measurement. This is exactly the same method as in the Kalman filter.
     @staticmethod
@@ -65,22 +73,51 @@ class ParticleFilter:
     def probability_of_measurement(self, measurement, predicted_measurement):
         """Given a measurement and a predicted measurement, computes
            probability."""
+        # Compute differences to real measurements.
+        sigma_d = self.measurement_distance_stddev
+        sigma_alpha = self.measurement_angle_stddev
 
-        # --->>> Put the code of a previous solution here.
-        pass  # Remove.
+        z = np.array(measurement)
+        pred_z = np.array(predicted_measurement)
+        z[1] = atan2(sin(z[1]), cos(z[1]))
+        pred_z[1] = atan2(sin(pred_z[1]), cos(pred_z[1]))
+
+        delta = z - pred_z
+        delta[1] = atan2(sin(delta[1]), cos(delta[1]))
+
+        P_d = normal_dist.pdf(delta[0], 0, sigma_d)
+        P_alpha = normal_dist.pdf(delta[1], 0, sigma_alpha)
+
+        return P_d * P_alpha
 
     def compute_weights(self, cylinders, landmarks):
-        """Computes one weight for each particle, return list of weights."""
+        """Computes one weight for each particle, returns list of weights."""
+        weights = []
+        for p in self.particles:
+            # Get list of tuples:
+            # [ ((range_0, bearing_0), (landmark_x, landmark_y)), ... ]
+            assignment = assign_cylinders(cylinders, p,
+                self.scanner_displacement, landmarks)
 
-        # --->>> Put the code of a previous solution here.
-        pass  # Remove.
+            wt = 1.0
+            for z, landmark in assignment:
+                # Get measurement for given landmark
+                z_pred = self.h(p, landmark, self.scanner_displacement)
+                wt *= self.probability_of_measurement(z, z_pred)
+            weights.append(wt)
+        total = sum(weights)
+        return [w/total for w in weights]
 
     def resample(self, weights):
         """Return a list of particles which have been resampled, proportional
            to the given weights."""
 
-        # --->>> Put the code of a previous solution here.
-        pass  # Remove.
+        # You may implement the 'resampling wheel' algorithm
+        # described in the lecture.
+        num_particles = len(self.particles)
+
+        return [self.particles[np.random.choice(num_particles, p=weights)]
+                for i in range(num_particles)]
 
     def correct(self, cylinders, landmarks):
         """The correction step of the particle filter."""
@@ -93,17 +130,25 @@ class ParticleFilter:
         """Prints particles to given file_desc output."""
         if not self.particles:
             return
-        print("PA", file=file_desc)
+        print("PA", file=file_desc, end=' ')
         for p in self.particles:
-            print("%.0f %.0f %.3f" % p, file=file_desc)
-        print(mean_y, mean_heading)., file=file_desc
+            print("%.0f %.0f %.3f" % p, file=file_desc, end=' ')
+        print(file=file_desc)
 
     def get_mean(self):
         """Compute mean position and heading from all particles."""
-
-        # --->>> This is the new code you'll have to implement.
-        # Return a tuple: (mean_x)
-        return (0.0, 0.0, 0.0)  # Replace this.
+        mean_x = 0
+        mean_y = 0
+        c_theta = 0
+        s_theta = 0
+        num_particles = len(self.particles)
+        for x, y, theta in self.particles:
+            mean_x += x/num_particles
+            mean_y += y/num_particles
+            c_theta += cos(theta)
+            s_theta += sin(theta)
+        mean_theta = atan2(s_theta, c_theta)
+        return (mean_x, mean_y, mean_theta)
 
 
 if __name__ == '__main__':
@@ -124,7 +169,7 @@ if __name__ == '__main__':
     measurement_angle_stddev = 15.0 / 180.0 * pi  # Angle measurement error.
 
     # Generate initial particles. Each particle is (x, y, theta).
-    number_of_particles = 50
+    number_of_particles = 200
     measured_state = (1850.0, 1897.0, 213.0 / 180.0 * pi)
     standard_deviations = (100.0, 100.0, 10.0 / 180.0 * pi)
     initial_particles = []
@@ -162,12 +207,12 @@ if __name__ == '__main__':
 
         # Output particles.
         pf.print_particles(f)
-        
+
         # Output state estimated from all particles.
         mean = pf.get_mean()
-        print("F %.0f %.0f %.3f" %\, file=f)
+        print("F %.0f %.0f %.3f" %\
               (mean[0] + scanner_displacement * cos(mean[2]),
                mean[1] + scanner_displacement * sin(mean[2]),
-               mean[2])
+               mean[2]), file=f)
 
     f.close()

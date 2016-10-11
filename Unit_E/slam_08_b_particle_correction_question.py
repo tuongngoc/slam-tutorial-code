@@ -7,7 +7,7 @@ from slam_e_library import get_cylinders_from_scan, assign_cylinders
 from math import sin, cos, pi, atan2, sqrt
 import random
 from scipy.stats import norm as normal_dist
-
+import numpy as np
 
 class ParticleFilter:
     def __init__(self, initial_particles,
@@ -45,9 +45,17 @@ class ParticleFilter:
 
     def predict(self, control):
         """The prediction step of the particle filter."""
+        left, right = control
 
-        # --->>> Insert code from previous question here.
-        pass  # Remove this.
+        alpha_1, alpha_2 = self.control_motion_factor, self.control_turn_factor
+        sigmaL = sqrt((alpha_1*left)**2 + (alpha_2*(right - left))**2)
+        sigmaR = sqrt((alpha_1*right)**2 + (alpha_2*(right - left))**2)
+
+        p_controls = [(random.gauss(left, sigmaL),
+                          random.gauss(right, sigmaR))
+                          for p in self.particles]
+        self.particles = [self.g(p, u, self.robot_width)
+            for p, u in zip(self.particles, p_controls)]
 
     # Measurement. This is exactly the same method as in the Kalman filter.
     @staticmethod
@@ -64,17 +72,21 @@ class ParticleFilter:
         """Given a measurement and a predicted measurement, computes
            probability."""
         # Compute differences to real measurements.
+        sigma_d = self.measurement_distance_stddev
+        sigma_alpha = self.measurement_angle_stddev
 
-        # --->>> Compute difference in distance and bearing angle.
-        # Important: make sure the angle difference works correctly and does
-        # not return values offset by 2 pi or - 2 pi.
-        # You may use the following Gaussian PDF function:
-        # scipy.stats.norm.pdf(x, mu, sigma). With the import in the header,
-        # this is normal_dist.pdf(x, mu, sigma).
-        # Note that the two parameters sigma_d and sigma_alpha discussed
-        # in the lecture are self.measurement_distance_stddev and
-        # self.measurement_angle_stddev.
-        return 1.0  # Replace this.
+        z = np.array(measurement)
+        pred_z = np.array(predicted_measurement)
+        z[1] = atan2(sin(z[1]), cos(z[1]))
+        pred_z[1] = atan2(sin(pred_z[1]), cos(pred_z[1]))
+
+        delta = z - pred_z
+        delta[1] = atan2(sin(delta[1]), cos(delta[1]))
+
+        P_d = normal_dist.pdf(delta[0], 0, sigma_d)
+        P_alpha = normal_dist.pdf(delta[1], 0, sigma_alpha)
+
+        return P_d * P_alpha
 
     def compute_weights(self, cylinders, landmarks):
         """Computes one weight for each particle, returns list of weights."""
@@ -85,21 +97,25 @@ class ParticleFilter:
             assignment = assign_cylinders(cylinders, p,
                 self.scanner_displacement, landmarks)
 
-            # --->>> Insert code to compute weight for particle p here.
-            # This will require a loop over all (measurement, landmark)
-            # in assignment. Append weight to the list of weights.
-            weights.append(1.0)  # Replace this.
-        return weights
+            wt = 1.0
+            for z, landmark in assignment:
+                # Get measurement for given landmark
+                z_pred = self.h(p, landmark, self.scanner_displacement)
+                wt *= self.probability_of_measurement(z, z_pred)
+            weights.append(wt)
+        total = sum(weights)
+        return [w/total for w in weights]
 
     def resample(self, weights):
         """Return a list of particles which have been resampled, proportional
            to the given weights."""
 
-        # --->>> Insert your code here.
         # You may implement the 'resampling wheel' algorithm
         # described in the lecture.
-        new_particles = self.particles  # Replace this.
-        return new_particles
+        num_particles = len(self.particles)
+
+        return [self.particles[np.random.choice(num_particles, p=weights)]
+                for i in range(num_particles)]
 
     def correct(self, cylinders, landmarks):
         """The correction step of the particle filter."""
@@ -112,10 +128,10 @@ class ParticleFilter:
         """Prints particles to given file_desc output."""
         if not self.particles:
             return
-        print("PA", file=file_desc)
+        print("PA", file=file_desc, end=' ')
         for p in self.particles:
-            print("%.0f %.0f %.3f" % p, file=file_desc)
-        print(y, theta)., file=file_desc
+            print("%.0f %.0f %.3f" % p, file=file_desc, end=' ')
+        print(file=file_desc)
 
 
 if __name__ == '__main__':
@@ -136,7 +152,7 @@ if __name__ == '__main__':
     measurement_angle_stddev = 15.0 / 180.0 * pi  # Angle measurement error.
 
     # Generate initial particles. Each particle is (x)
-    number_of_particles = 50
+    number_of_particles = 200
     measured_state = (1850.0, 1897.0, 213.0 / 180.0 * pi)
     standard_deviations = (100.0, 100.0, 10.0 / 180.0 * pi)
     initial_particles = []

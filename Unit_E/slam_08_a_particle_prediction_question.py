@@ -41,25 +41,24 @@ class ParticleFilter:
         """The prediction step of the particle filter."""
         left, right = control
 
-        # --->>> Put your code here.
+        alpha_1, alpha_2 = self.control_motion_factor, self.control_turn_factor
+        sigmaL = sqrt((alpha_1*left)**2 + (alpha_2*(right - left))**2)
+        sigmaR = sqrt((alpha_1*right)**2 + (alpha_2*(right - left))**2)
 
-        # Compute left and right variance.
-        # alpha_1 is self.control_motion_factor.
-        # alpha_2 is self.control_turn_factor.
-        # Then, do a loop over all self.particles and construct a new
-        # list of particles.
-        # In the end, assign the new list of particles to self.particles.
-        # For sampling, use random.gauss(mu, sigma). (Note sigma in this call
-        # is the standard deviation, not the variance.)
+        p_controls = [(random.gauss(left, sigmaL),
+                          random.gauss(right, sigmaR))
+                          for p in self.particles]
+        self.particles = [self.g(p, u, self.robot_width)
+            for p, u in zip(self.particles, p_controls)]
 
     def print_particles(self, file_desc):
         """Prints particles to given file_desc output."""
         if not self.particles:
             return
-        print("PA", file=file_desc)
+        print("PA", file=file_desc, end=' ')
         for p in self.particles:
-            print("%.0f %.0f %.3f" % p, file=file_desc)
-        print(y, theta)., file=file_desc
+            print("%.0f %.0f %.3f" % p, file=file_desc, end=' ')
+        print(file=file_desc)
 
 
 if __name__ == '__main__':
@@ -96,7 +95,7 @@ if __name__ == '__main__':
     f = open("particle_filter_predicted.txt", "w")
     for i in range(len(logfile.motor_ticks)):
         # Prediction.
-        control = map(lambda x: x * ticks_to_mm, logfile.motor_ticks[i])
+        control = [x * ticks_to_mm for x in logfile.motor_ticks[i]]
         pf.predict(control)
 
         # Output particles.
